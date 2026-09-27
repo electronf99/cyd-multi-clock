@@ -338,99 +338,92 @@ class Display(object):
         line = color.to_bytes(2, 'big') * w
         self.block(x, y, x + w - 1, y, line)
 
-    def draw_image(self, path, x=0, y=0, w=320, h=240):
-
-        x2 = x + w - 1
-        y2 = y + h - 1
-
-        if self.is_off_grid(x, y, x2, y2):
-            return
-
-        chunk_height = 46
-        chunk_count, remainder = divmod(h, chunk_height)
-        chunk_size = chunk_height * w * 2
-
-        centre = chunk_count // 2
-
-        # Allocate ONCE
-        buf = bytearray(chunk_size)
-
-        order = [centre]
-
-        for offset in range(1, chunk_count):
-            if centre - offset >= 0:
-                order.append(centre - offset)
-
-            if centre + offset < chunk_count:
-                order.append(centre + offset)
-
-        with open(path, "rb") as f:
-
-            for c in order:
-
-                f.seek(c * chunk_size)
-                f.readinto(buf)
-                #buf = f.read(chunk_size)
-
-                chunk_y = y + c * chunk_height
-
-                self.block(
-                    x,
-                    chunk_y,
-                    x2,
-                    chunk_y + chunk_height - 1,
-                    buf
-                )
-
-            if remainder:
-                f.seek(chunk_count * chunk_size)
-
-                buf = f.read(remainder * w * 2)
-
-                chunk_y = y + chunk_count * chunk_height
-
-                self.block(
-                    x,
-                    chunk_y,
-                    x2,
-                    chunk_y + remainder - 1,
-                    buf
-                )
-
-
-
-
-
     # def draw_image(self, path, x=0, y=0, w=320, h=240):
-    #     """Draw image from flash.
-    #     Args:
-    #         path (string): Image file path.
-    #         x (int): X coordinate of image left.  Default is 0.
-    #         y (int): Y coordinate of image top.  Default is 0.
-    #         w (int): Width of image.  Default is 320.
-    #         h (int): Height of image.  Default is 240.
-    #     """
+
     #     x2 = x + w - 1
     #     y2 = y + h - 1
+
     #     if self.is_off_grid(x, y, x2, y2):
     #         return
+
+    #     chunk_height = 46
+    #     chunk_count, remainder = divmod(h, chunk_height)
+    #     chunk_size = chunk_height * w * 2
+
+    #     centre = chunk_count // 2
+
+    #     order = [centre]
+
+    #     for offset in range(1, chunk_count):
+    #         if centre - offset >= 0:
+    #             order.append(centre - offset)
+
+    #         if centre + offset < chunk_count:
+    #             order.append(centre + offset)
+
     #     with open(path, "rb") as f:
-    #         chunk_height = 48 #1024 // w
-    #         chunk_count, remainder = divmod(h, chunk_height)
-    #         chunk_size = chunk_height * w * 2
-    #         chunk_y = y
-    #         if chunk_count:
-    #             for c in range(0, chunk_count):
-    #                 buf = f.read(chunk_size)
-    #                 self.block(x, chunk_y,
-    #                            x2, chunk_y + chunk_height - 1,
-    #                            buf)
-    #                 chunk_y += chunk_height
+
+    #         for c in order:
+
+    #             f.seek(c * chunk_size)
+
+    #             buf = f.read(chunk_size)
+
+    #             chunk_y = y + c * chunk_height
+
+    #             self.block(
+    #                 x,
+    #                 chunk_y,
+    #                 x2,
+    #                 chunk_y + chunk_height - 1,
+    #                 buf
+    #             )
+
     #         if remainder:
+    #             f.seek(chunk_count * chunk_size)
+
     #             buf = f.read(remainder * w * 2)
-    #             self.block(x, chunk_y,
-    #                        x2, chunk_y + remainder - 1,
-    #                        buf)
+
+    #             chunk_y = y + chunk_count * chunk_height
+
+    #             self.block(
+    #                 x,
+    #                 chunk_y,
+    #                 x2,
+    #                 chunk_y + remainder - 1,
+    #                 buf
+    #             )
+
+    def draw_image(self, path, x=0, y=0, w=320, h=240):
+        """Draw image from flash.
+        Args:
+            path (string): Image file path.
+            x (int): X coordinate of image left.  Default is 0.
+            y (int): Y coordinate of image top.  Default is 0.
+            w (int): Width of image.  Default is 320.
+            h (int): Height of image.  Default is 240.
+        """
+        x2 = x + w - 1
+        y2 = y + h - 1
+        if self.is_off_grid(x, y, x2, y2):
+            return
+        with open(path, "rb") as f:
+            chunk_height = 48 #1024 // w
+            chunk_count, remainder = divmod(h, chunk_height)
+            chunk_size = chunk_height * w * 2
+            chunk_y = y
+            if chunk_count:
+                for c in range(0, chunk_count):
+                    buf = f.read(chunk_size)
+                    self.block(x, chunk_y,
+                               x2, chunk_y + chunk_height - 1,
+                               buf)
+                    chunk_y += chunk_height
+            if remainder:
+                buf = f.read(remainder * w * 2)
+                self.block(x, chunk_y,
+                           x2, chunk_y + remainder - 1,
+                           buf)
     
 
                 

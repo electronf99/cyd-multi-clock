@@ -2,22 +2,13 @@
 # Rui Santos & Sara Santos - Random Nerd Tutorials
 # Modified to fade the CYD backlight between image updates
 
-from machine import UART, Pin, SPI, PWM
+from machine import Pin, SPI, PWM
 from time import sleep, sleep_ms, ticks_ms, ticks_diff
 
 from ili9341 import Display, color565
+from xglcd_font import XglcdFont
 
-import random
-
-# pyright: reportAttributeAccessIssue=false
-
-uart = UART(
-    1,
-    baudrate=115200,
-    rx=Pin(22),
-    tx=Pin(5)   # unused, but UART wants a TX pin
-)
-
+import gc
 
 # TFT display SPI
 display_spi = SPI(
@@ -51,7 +42,7 @@ backlight.duty_u16(65535)  # full brightness
 def fade_out():
     for duty in range(32768, 8192, -32):
         backlight.duty_u16(duty)
-    sleep(0.02)
+    sleep(0.1)
     
     backlight.duty_u16(8192)
     # sleep(0.01)
@@ -67,49 +58,34 @@ def fade_in():
 
 def load_image(n):
     #fade_out()
-    #fade_out()
+    start = ticks_ms()
+    fade_out()
     display.draw_image(f"background.raw", 0, 0, 240,320)
+    fade_in()
     display.draw_image(f"nixie-{n}.raw", 0, 0, 240, 320)
+    print("Draw:", ticks_diff(ticks_ms(), start), "ms")
     #fade_in()
-    
-
-    
+    sleep(0.5)
 
 
-uart = UART(
-    1,
-    baudrate=115200,
-    rx=Pin(22),
-    tx=Pin(21)   # unused, but UART wants a TX pin
-)
-
-
-
-with open("DIGITNUM", "r") as f:
-    DIGITNUM = int(f.read().strip())
-
-last_digit = 0
-
-print("Listening on GPIO22...")
 try:
+
+
+
+    # gc.collect()
+
+    # start = ticks_ms()
+
+    # with open("nixie-0.raw", "rb") as f:
+    #     buf = bytearray(23040)   # current chunk size
+    #     f.readinto(buf)
+
+    # print("Read =", ticks_diff(ticks_ms(), start))
+
     while True:
-        if uart.any():
-            data = uart.readline()
-
-            if data:
-                try:
-                    rx = data.decode().strip()
-                    digit = list(rx)[DIGITNUM-1]                    
-                    
-                    if last_digit != digit:
-                        print(f"[{rx} -> {digit}]")
-                        number = rx
-                        load_image(digit)
-                        last_digit=digit
-                except:
-                    print("##")
-
-        sleep_ms(100)
+        for digit in range(10):
+            load_image(digit)
+            sleep(0.3)
 
 except Exception as e:
     print("Error occurred:", e)

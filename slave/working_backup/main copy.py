@@ -2,22 +2,12 @@
 # Rui Santos & Sara Santos - Random Nerd Tutorials
 # Modified to fade the CYD backlight between image updates
 
-from machine import UART, Pin, SPI, PWM
+from machine import Pin, SPI, PWM
 from time import sleep, sleep_ms, ticks_ms, ticks_diff
 
 from ili9341 import Display, color565
 
 import random
-
-# pyright: reportAttributeAccessIssue=false
-
-uart = UART(
-    1,
-    baudrate=115200,
-    rx=Pin(22),
-    tx=Pin(5)   # unused, but UART wants a TX pin
-)
-
 
 # TFT display SPI
 display_spi = SPI(
@@ -67,49 +57,32 @@ def fade_in():
 
 def load_image(n):
     #fade_out()
-    #fade_out()
+    start = ticks_ms()
+    fade_out()
     display.draw_image(f"background.raw", 0, 0, 240,320)
     display.draw_image(f"nixie-{n}.raw", 0, 0, 240, 320)
-    #fade_in()
+    print("Draw:", ticks_diff(ticks_ms(), start), "ms")
+    fade_in()
     
 
     
 
 
-uart = UART(
-    1,
-    baudrate=115200,
-    rx=Pin(22),
-    tx=Pin(21)   # unused, but UART wants a TX pin
-)
-
-
-
-with open("DIGITNUM", "r") as f:
-    DIGITNUM = int(f.read().strip())
-
-last_digit = 0
-
-print("Listening on GPIO22...")
 try:
+
+
     while True:
-        if uart.any():
-            data = uart.readline()
+        for digit in range(10):
+            load_image(digit)
+            count = 0
+            
+            while count < 50:
+                duty = random.randint(15000, 16384)
+                backlight.duty_u16(duty)
+                sleep(0.2)
+                count += 1
 
-            if data:
-                try:
-                    rx = data.decode().strip()
-                    digit = list(rx)[DIGITNUM-1]                    
-                    
-                    if last_digit != digit:
-                        print(f"[{rx} -> {digit}]")
-                        number = rx
-                        load_image(digit)
-                        last_digit=digit
-                except:
-                    print("##")
-
-        sleep_ms(100)
+            sleep(0.4)
 
 except Exception as e:
     print("Error occurred:", e)
