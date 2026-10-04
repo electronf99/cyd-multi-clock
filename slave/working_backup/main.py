@@ -6,9 +6,9 @@ from machine import Pin, SPI, PWM
 from time import sleep, sleep_ms, ticks_ms, ticks_diff
 
 from ili9341 import Display, color565
-from xglcd_font import XglcdFont
+#from xglcd_font import XglcdFont
 
-import gc
+#import gc
 
 # TFT display SPI
 display_spi = SPI(
@@ -60,8 +60,10 @@ def load_image(n):
     #fade_out()
     start = ticks_ms()
     fade_out()
+    print("loadingb")
     display.draw_image(f"background.raw", 0, 0, 240,320)
     fade_in()
+    print("loadingd")
     display.draw_image(f"nixie-{n}.raw", 0, 0, 240, 320)
     print("Draw:", ticks_diff(ticks_ms(), start), "ms")
     #fade_in()

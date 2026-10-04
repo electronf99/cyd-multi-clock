@@ -99,13 +99,17 @@ try:
             if data:
                 try:
                     rx = data.decode().strip()
-                    digit = list(rx)[DIGITNUM-1]                    
-                    
-                    if last_digit != digit:
-                        print(f"[{rx} -> {digit}]")
-                        number = rx
-                        load_image(digit)
-                        last_digit=digit
+                    #print(list(rx)[5])
+                    digit = list(rx)[DIGITNUM]                    
+                    if list(rx)[0] == "[" and list(rx)[5] == "]":
+                        print(rx)
+                        if last_digit != digit:
+                            print(f"{rx} -> {digit}")
+                            number = rx
+                            load_image(digit)
+                            last_digit=digit
+                    else:
+                        print("data error")
                 except:
                     print("##")
 
