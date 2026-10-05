@@ -2,9 +2,9 @@
 # Rui Santos & Sara Santos - Random Nerd Tutorials
 # Modified to fade the CYD backlight between image updates
 
-from machine import UART, Pin, SPI, PWM
+import machine
+from machine import UART, Pin, SPI, PWM, WDT
 from time import sleep, sleep_ms, ticks_ms, ticks_diff
-
 from ili9341 import Display, color565
 
 import random
@@ -47,42 +47,15 @@ backlight = PWM(Pin(21))
 backlight.freq(1000)
 backlight.duty_u16(65535)  # full brightness
 
-
-def fade_out():
-    for duty in range(32768, 8192, -32):
-        backlight.duty_u16(duty)
-    sleep(0.02)
-    
-    backlight.duty_u16(8192)
-    # sleep(0.01)
-
-def fade_in():
-    for duty in range(2048, 16384, 32):
-        backlight.duty_u16(duty)
-        sleep_ms(2)
-
-    # Ensure full brightness
-    backlight.duty_u16(16384)
-
-
 def load_image(n):
-    #fade_out()
-    #fade_out()
     display.draw_image(f"background.raw", 0, 0, 240,320)
     display.draw_image(f"nixie-{n}.raw", 0, 0, 240, 320)
-    #fade_in()
-    
-
-    
 
 
-uart = UART(
-    1,
-    baudrate=115200,
-    rx=Pin(22),
-    tx=Pin(21)   # unused, but UART wants a TX pin
-)
-
+def set_brightness(brightness):
+    duty=int(65535 / (10 - int(brightness)))
+    print(f"duty: {duty}")
+    backlight.duty_u16(duty)
 
 
 with open("DIGITNUM", "r") as f:
@@ -90,33 +63,55 @@ with open("DIGITNUM", "r") as f:
 
 last_digit = 0
 
+set_brightness(9)
+display.draw_image(f"background.raw", 0, 0, 240,320)
+
 print("Listening on GPIO22...")
+
+print("Setting Watchdog Timer")
+wdt = WDT(timeout=10000) # 10 seconds
+
 try:
     while True:
+        wdt.feed()
         if uart.any():
             data = uart.readline()
 
             if data:
+                print(data)
+                rx = data.decode().strip()
                 try:
                     rx = data.decode().strip()
                     #print(list(rx)[5])
-                    digit = list(rx)[DIGITNUM]                    
-                    if list(rx)[0] == "[" and list(rx)[5] == "]":
-                        print(rx)
-                        if last_digit != digit:
-                            print(f"{rx} -> {digit}")
-                            number = rx
-                            load_image(digit)
-                            last_digit=digit
+                    digit = list(rx)[DIGITNUM]
+                    
+                 
+                    if(len(rx) == 7):
+                        if list(rx)[0] == "[" and list(rx)[6] == "]":
+
+                            brightness = (list(rx)[5])
+                            print(brightness)
+                            set_brightness(brightness)
+                            print(f"digit: {digit}")   
+
+                            if last_digit != digit:
+                                print(f"{rx} -> {digit}")
+                                number = rx
+                                load_image(digit)
+                                last_digit=digit
+                        else:
+                            print("data error")
                     else:
-                        print("data error")
-                except:
+                        print(f"only received {len(rx)}")
+                except Exception as e:
                     print("##")
+                    print(e)
 
         sleep_ms(100)
 
 except Exception as e:
     print("Error occurred:", e)
+    machine.reset()
 
 except KeyboardInterrupt:
     print("Program interrupted by the user")
