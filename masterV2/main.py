@@ -19,19 +19,11 @@ i2c = I2C(
 )
 
 TMP117_ADDR = 0x48
-#RTC_ADDR = 0x52
+
 
 print("I2C devices:", [hex(addr) for addr in i2c.scan()])
 
 rtc = Makerverse_RV3028(i2c = i2c)
-#rtc = DFR0998(i2c)
-
-
-# def bcd_to_dec(bcd):
-#     return ((bcd >> 4) * 10) + (bcd & 0x0F)
-
-# def dec_to_bcd(dec):
-#     return ((dec // 10) << 4) | (dec % 10)
 
 # Read Temperature from I2C TMP117 device
 # Data consists of 2 bytes. data[0] is msb
