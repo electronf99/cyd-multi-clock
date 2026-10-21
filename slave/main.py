@@ -47,10 +47,23 @@ backlight = PWM(Pin(21))
 backlight.freq(1000)
 backlight.duty_u16(65535)  # full brightness
 
+def draw_decpoint(x=0,y=270):
+
+    orange = color565(0,52,200)
+    lightorange = color565(0,165,255)
+    whiteish = color565(230,230,250)
+
+    display.fill_circle(12 + x, 30 + y, 12, orange )
+    display.fill_circle(13 + x, 30 + y,  7, lightorange) 
+    display.fill_circle(14 + x, 30 + y, 4, whiteish)
+
+def remove_decpoint(x=0,y=270):
+        darkorange = color565(0,10,80)
+        display.fill_circle(12 + x, 30 + y, 12, darkorange )
+
 def load_image(n):
     display.draw_image(f"background.raw", 0, 0, 240,320)
     display.draw_image(f"nixie-{n}.raw", 0, 0, 240, 320)
-
 
 def set_brightness(brightness):
     duty=int(65535 / (10 - int(brightness)))
@@ -82,13 +95,11 @@ try:
                 rx = data.decode().strip()
                 try:
                     rx = data.decode().strip()
-                    #print(list(rx)[5])
-                    digit = list(rx)[DIGITNUM]
                     
                  
                     if(len(rx) == 7):
                         if list(rx)[0] == "[" and list(rx)[6] == "]":
-
+                            digit = list(rx)[DIGITNUM]
                             brightness = (list(rx)[5])
                             print(brightness)
                             set_brightness(brightness)
@@ -99,6 +110,12 @@ try:
                                 number = rx
                                 load_image(digit)
                                 last_digit=digit
+
+                            if DIGITNUM == 3 and list(rx)[4] == "C":
+                                draw_decpoint()
+                            else:
+                                remove_decpoint()
+
                         else:
                             print("data error")
                     else:
@@ -117,5 +134,5 @@ except KeyboardInterrupt:
     print("Program interrupted by the user")
 
 finally:
-    backlight.duty_u16(65535)
+    backlight.duty_u16(0)
 

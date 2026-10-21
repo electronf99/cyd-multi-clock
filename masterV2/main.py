@@ -1,6 +1,7 @@
 from machine import UART, Pin, I2C
 from time import sleep
 import time
+from Makerverse_RV3028 import Makerverse_RV3028
 
 uart = UART(
     1,
@@ -14,21 +15,23 @@ i2c = I2C(
     0,
     sda=Pin(11),
     scl=Pin(12),
-    freq=400000
+    freq=40_000
 )
 
 TMP117_ADDR = 0x48
-RTC_ADDR = 0x52
+#RTC_ADDR = 0x52
 
 print("I2C devices:", [hex(addr) for addr in i2c.scan()])
 
+rtc = Makerverse_RV3028(i2c = i2c)
+#rtc = DFR0998(i2c)
 
 
-def bcd_to_dec(bcd):
-    return ((bcd >> 4) * 10) + (bcd & 0x0F)
+# def bcd_to_dec(bcd):
+#     return ((bcd >> 4) * 10) + (bcd & 0x0F)
 
-def dec_to_bcd(dec):
-    return ((dec // 10) << 4) | (dec % 10)
+# def dec_to_bcd(dec):
+#     return ((dec // 10) << 4) | (dec % 10)
 
 # Read Temperature from I2C TMP117 device
 # Data consists of 2 bytes. data[0] is msb
@@ -50,28 +53,34 @@ def read_temperature(i2c, addr):
     return temp_c
 
 
-def rv3028_get_time(i2c, addr):
-    data = i2c.readfrom_mem(addr, 0x00, 7)
+def rv3028_get_time(rtc):
 
-    second = bcd_to_dec(data[0] & 0x7F)
-    minute = bcd_to_dec(data[1] & 0x7F)
-    hour   = bcd_to_dec(data[2] & 0x3F)
-    day    = bcd_to_dec(data[4] & 0x3F)
-    month  = bcd_to_dec(data[5] & 0x1F)
-    year   = 2000 + bcd_to_dec(data[6])
-
+    (year, month, day) = (rtc.getDate(timeFormat='list'))
+    (hour, minute, second) = (rtc.getTime(timeFormat='list'))
     return (year, month, day, hour, minute, second)
 
+count=0
 
 while True:
 
     temp = read_temperature(i2c, TMP117_ADDR)
-    (year, month, day, hour, minute, second) = rv3028_get_time(i2c, RTC_ADDR)
+    (year, month, day, hour, minute, second) = rv3028_get_time(rtc)
 
-    hhmm = f"{minute:02d}{second:02d}"
-    brightness = 9
-    packet = f"[{hhmm}{brightness}]\n" 
-    uart.write(packet)
+    hhmm = f"{hour:02d}{minute:02d}"
+    brightness = 8
+
+    temp_packet = f"[{int(temp*10):03d}C{brightness}]"
+    time_packet = f"[{hhmm}{brightness}]"
+
+    print(f"{rtc.timestamp()} : {temp} ")
+
+    if second % 10 == 9 or second % 10 == 8:
+        packet = temp_packet
+    else:
+        packet = time_packet    
+    
+
+    uart.write(packet + "\n")
 
     print("Sent:", packet.strip())
 
